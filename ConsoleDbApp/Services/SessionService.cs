@@ -1,5 +1,5 @@
 ﻿using ConsoleDbApp.Contexts;
-using ConsoleDbApp.Models;
+using ConsoleDbApp.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConsoleDbApp.Services
@@ -9,10 +9,27 @@ namespace ConsoleDbApp.Services
         private readonly FilmsDbContext _context = context;
 
         public async Task<int> IncreaseSessionPriceByHallIdAsync(int hallId, decimal price)
-        {
-            return await _context.Database
+            => await _context.Database
                 .ExecuteSqlAsync($"UPDATE Session SET Price += {price} WHERE HallId = {hallId} ");
+
+        public async Task<SessionPriceDto> GetPriceInfoByFilmIdAsync(int id)
+        {
+            var selectedPrices = _context.Sessions.Where(s => s.FilmId == id).Select(s => s.Price);
+
+            var minPrice = await selectedPrices.MinAsync();
+            var maxPrice = await selectedPrices.MaxAsync();
+            var averagePrice = await selectedPrices.AverageAsync();
+
+            return new SessionPriceDto(minPrice, maxPrice, averagePrice);
         }
+
+        public async Task<DateTime> GetSessionDateAndTimeByTicketId(int id)
+            => await _context.Database
+                .SqlQuery<DateTime>(@$"SELECT Session.StartDate AS value
+                FROM Ticket INNER JOIN 
+                Session ON Ticket.SessionId = Session.SessionId 
+                WHERE Ticket.TicketId = {id}")
+                .FirstOrDefaultAsync();
     }
 }
 
