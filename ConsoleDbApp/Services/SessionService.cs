@@ -1,6 +1,8 @@
 ﻿using ConsoleDbApp.Contexts;
 using ConsoleDbApp.DTOs;
+using ConsoleDbApp.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Numerics;
 
 namespace ConsoleDbApp.Services
 {
@@ -23,13 +25,18 @@ namespace ConsoleDbApp.Services
             return new SessionPriceDto(minPrice, maxPrice, averagePrice);
         }
 
-        public async Task<DateTime> GetSessionDateAndTimeByTicketId(int id)
+        public async Task<DateTime> GetSessionDateAndTimeByTicketIdAsync(int id)
             => await _context.Database
                 .SqlQuery<DateTime>(@$"SELECT Session.StartDate AS value
                 FROM Ticket INNER JOIN 
                 Session ON Ticket.SessionId = Session.SessionId 
                 WHERE Ticket.TicketId = {id}")
                 .FirstOrDefaultAsync();
+
+        public async Task<List<Session>> GetSessionsByFilmIdAsync(int id)
+        => await _context.Sessions
+            .FromSql($"SELECT * FROM dbo.GetSessionsByFilmId({id})")
+            .ToListAsync();
     }
 }
 
